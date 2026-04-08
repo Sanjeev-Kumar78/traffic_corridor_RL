@@ -2,7 +2,7 @@ import logging
 import random
 from typing import Any, Dict, List, Literal
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel
 
 app = FastAPI(title="Traffic Corridor Pro")
@@ -258,11 +258,17 @@ def build_state_response() -> Dict[str, Any]:
 
 
 @app.post("/reset", response_model=ResetResponse)
-async def reset(req: Dict[str, Any] = None):
-    # This handles empty bodies, missing fields, and query params manually
-    task_id = DEFAULT_TASK_ID
+async def reset(request: Request):
+    # This handles empty bodies, missing fields, and query params manually.
+    task_id = request.query_params.get("task_id", DEFAULT_TASK_ID)
+
+    try:
+        req = await request.json()
+    except Exception:
+        req = None
+
     if req and isinstance(req, dict):
-        task_id = req.get("task_id", DEFAULT_TASK_ID)
+        task_id = req.get("task_id", task_id)
 
     try:
         sim.reset(task_id)

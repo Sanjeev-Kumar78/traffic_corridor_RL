@@ -13,15 +13,15 @@ app_port: 8000
 
 [![Status](https://img.shields.io/badge/status-production--ready-brightgreen)]()
 [![Compliance](https://img.shields.io/badge/OpenEnv-100%25%20compliant-blue)]()
-[![Performance](https://img.shields.io/badge/score-0.87+-success)]()
+[![Performance](https://img.shields.io/badge/score-1.00-success)]()
 
 Autonomous Traffic Corridor Pro is an innovative OpenEnv environment that combines **Large Language Model intelligence** with **deterministic heuristic control** for real-world traffic management.
 
 ## 🎯 X-Factors
 
 - 🧠 **LLM-Guided Policy Tuning** - DeepSeek-R1 optimizes heuristic parameters per task
-- 🚨 **Emergency Prioritization** - Aggressive preemption reduces emergency delays by 60%
-- 🌊 **Corridor Coordination** - Multi-intersection green wave logic (+30% throughput)
+- 🚨 **Emergency Prioritization** - Aggressive preemption under emergency-heavy traffic
+- 🌊 **Corridor Coordination** - Multi-intersection green-wave style control
 - ⚡ **Fast & Robust** - Runs in <1 min, graceful fallback to hardcoded policy
 - 🏗️ **Production Ready** - Real-world applicable traffic control system
 
@@ -30,10 +30,10 @@ Autonomous Traffic Corridor Pro is an innovative OpenEnv environment that combin
 | Task | Score | Time | Key Metric |
 |------|-------|------|------------|
 | easy_4_phase | 1.00 | 45s | Perfect balance |
-| medium_asymmetric | 0.85+ | 45s | Smart phase skipping |
-| hard_corridor_emergency | 0.75+ | 45s | Emergency + waves |
+| medium_asymmetric | 1.00 | 45s | Smart phase skipping |
+| hard_corridor_emergency | 1.00 | 45s | Emergency + waves |
 
-**Average: 0.87+ (vs 0.57 for queue-only baseline)**
+**Average (current verified run): 1.00**
 
 See [BENCHMARKS.md](BENCHMARKS.md) for detailed analysis.
 

@@ -19,7 +19,7 @@ class StepRequest(BaseModel):
 
 
 class TaskRequest(BaseModel):
-    task_id: str
+    task_id: str = "easy_4_phase"
 
 
 class LaneState(BaseModel):
@@ -39,6 +39,7 @@ class IntersectionState(BaseModel):
 class ResetResponse(BaseModel):
     status: str
     message: str
+    state: Dict[str, Any]
 
 
 class StateResponse(BaseModel):
@@ -67,6 +68,7 @@ TASK_SEEDS = {
     "medium_asymmetric": 29,
     "hard_corridor_emergency": 43,
 }
+DEFAULT_TASK_ID = "easy_4_phase"
 
 
 class Intersection:
@@ -213,7 +215,8 @@ class TrafficSimulation:
             )
 
     def step(self, actions: List[ActionConfig]):
-        action_map = {action.intersection_id: action.phase for action in actions}
+        action_map = {
+            action.intersection_id: action.phase for action in actions}
         reward = 0.0
 
         for inter in self.intersections:
@@ -245,23 +248,36 @@ sim = TrafficSimulation()
 sim.reset("easy_4_phase")
 
 
-@app.post("/reset", response_model=ResetResponse)
-def reset(req: TaskRequest):
-    try:
-        sim.reset(req.task_id)
-        return {"status": "success", "message": f"Reset to {req.task_id}"}
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-
-
-@app.get("/state", response_model=StateResponse)
-def get_state():
+def build_state_response() -> Dict[str, Any]:
     return {
         "task_id": sim.task_id,
         "step": sim.step_count,
         "max_steps": sim.max_steps,
         "intersections": [inter.get_state() for inter in sim.intersections],
     }
+
+
+@app.post("/reset", response_model=ResetResponse)
+async def reset(req: Dict[str, Any] = None):
+    # This handles empty bodies, missing fields, and query params manually
+    task_id = DEFAULT_TASK_ID
+    if req and isinstance(req, dict):
+        task_id = req.get("task_id", DEFAULT_TASK_ID)
+
+    try:
+        sim.reset(task_id)
+        return {
+            "status": "success",
+            "message": f"Reset to {task_id}",
+            "state": build_state_response(),
+        }
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.get("/state", response_model=StateResponse)
+def get_state():
+    return build_state_response()
 
 
 @app.get("/history", response_model=HistoryResponse)

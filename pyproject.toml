@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "traffic-corridor-pro"
+version = "0.1.0"
+description = "Traffic signal control environment and inference agent for OpenEnv."
+readme = "README.md"
+requires-python = ">=3.10,<3.12"
+dependencies = [
+    "fastapi==0.110.0",
+    "uvicorn==0.29.0",
+    "pydantic==2.6.4",
+    "openai==1.14.0",
+    "requests==2.33.0",
+]
+
+[tool.setuptools]
+py-modules = ["environment", "inference", "graders"]

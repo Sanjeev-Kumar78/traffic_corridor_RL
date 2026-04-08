@@ -13,7 +13,7 @@ app_port: 8000
 
 [![Status](https://img.shields.io/badge/status-production--ready-brightgreen)]()
 [![Compliance](https://img.shields.io/badge/OpenEnv-100%25%20compliant-blue)]()
-[![Performance](https://img.shields.io/badge/score-1.00-success)]()
+[![Performance](https://img.shields.io/badge/score-0.71-yellow)]()
 
 Autonomous Traffic Corridor Pro is an innovative OpenEnv environment that combines **Large Language Model intelligence** with **deterministic heuristic control** for real-world traffic management.
 
@@ -51,11 +51,11 @@ flowchart LR
 
 | Task | Score | Time | Key Metric |
 |------|-------|------|------------|
-| easy_4_phase | 1.00 | 45s | Perfect balance |
-| medium_asymmetric | 1.00 | 45s | Smart phase skipping |
-| hard_corridor_emergency | 1.00 | 45s | Emergency + waves |
+| easy_4_phase | 0.95 | 45s | Stable phase discipline |
+| medium_asymmetric | 0.98 | 45s | Smart phase skipping |
+| hard_corridor_emergency | 0.21 | 45s | Strict emergency/gridlock penalty |
 
-**Average (current verified run): 1.00**
+**Average (current verified run): 0.71**
 
 See [BENCHMARKS.md](BENCHMARKS.md) for detailed analysis.
 

@@ -15,7 +15,7 @@ MODEL_NAME = os.getenv("MODEL_NAME", "deepseek-ai/DeepSeek-R1")
 API_KEY = os.getenv("HF_TOKEN") or os.getenv("API_KEY")
 BENCHMARK = os.getenv("BENCHMARK", "traffic_corridor_pro")
 REQUEST_TIMEOUT_SECONDS = float(os.getenv("REQUEST_TIMEOUT_SECONDS", "30"))
-SUCCESS_SCORE_THRESHOLD = float(os.getenv("SUCCESS_SCORE_THRESHOLD", "0.1"))
+SUCCESS_SCORE_THRESHOLD = float(os.getenv("SUCCESS_SCORE_THRESHOLD", "0.7"))
 POLICY_MAX_TOKENS = int(os.getenv("POLICY_MAX_TOKENS", "220"))
 TASKS = [
     task.strip()

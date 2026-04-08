@@ -12,11 +12,14 @@ license: apache-2.0
 
 > **LLM-Enhanced Traffic Control System for Multi-Intersection Coordination with Emergency Vehicle Prioritization**
 
-[![Status](https://img.shields.io/badge/status-production--ready-brightgreen)]()
-[![Compliance](https://img.shields.io/badge/OpenEnv-100%25%20compliant-blue)]()
-[![Performance](https://img.shields.io/badge/score-0.71-yellow)]()
+[![Hugging Face Space](https://img.shields.io/badge/dynamic/json?label=HF%20Space&query=%24.runtime.stage&url=https://huggingface.co/api/spaces/Sanjeev-Kumar78/traffic_corridor_RL&logo=huggingface&style=for-the-badge&color=brightgreen&labelColor=151515)](https://huggingface.co/spaces/Sanjeev-Kumar78/traffic_corridor_RL)
+[![HF Hardware](https://img.shields.io/badge/dynamic/json?label=Hardware&query=%24.runtime.hardware.current&url=https://huggingface.co/api/spaces/Sanjeev-Kumar78/traffic_corridor_RL&style=for-the-badge&color=007ec6&labelColor=151515)](https://huggingface.co/spaces/Sanjeev-Kumar78/traffic_corridor_RL)
+[![GitHub](https://img.shields.io/badge/GitHub-traffic__corridor__RL-181717?logo=github&style=for-the-badge)](https://github.com/Sanjeev-Kumar78/traffic_corridor_RL)
 
 Autonomous Traffic Corridor Pro is an innovative OpenEnv environment that combines **Large Language Model intelligence** with **deterministic heuristic control** for real-world traffic management.
+
+- **GitHub:** https://github.com/Sanjeev-Kumar78/traffic_corridor_RL
+- **Hugging Face Space:** https://huggingface.co/spaces/Sanjeev-Kumar78/traffic_corridor_RL
 
 ## 🧭 Architecture
 
@@ -24,7 +27,7 @@ Autonomous Traffic Corridor Pro is an innovative OpenEnv environment that combin
 flowchart LR
     subgraph SPACE["HF Docker Space (app_port: 8000)"]
         INF["inference.py"]
-        ENV["environment.py<br/>(reset, state, step, history)"]
+        ENV["environment.py (reset, state, step, history)"]
         GRD["graders.py"]
     end
 

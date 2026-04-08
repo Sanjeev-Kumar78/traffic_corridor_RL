@@ -123,9 +123,36 @@ set POLICY_MAX_TOKENS=220
 
 ## Local Run
 
+### Option A: Recommended (`uv` + `pyproject.toml`)
+
 ```bash
+# from traffic_corridor_pro/
+uv sync
+uv run server
+```
+
+In a second terminal:
+
+```bash
+uv run python inference.py
+```
+
+### Option B: Fallback (`pip` + `requirements.txt`)
+
+```bash
+# from traffic_corridor_pro/
+python -m venv .venv
+# Windows PowerShell:
+.venv\Scripts\Activate.ps1
+# Linux/macOS:
+# source .venv/bin/activate
 pip install -r requirements.txt
 uvicorn environment:app --host 0.0.0.0 --port 8000
+```
+
+In a second terminal (same activated env):
+
+```bash
 python inference.py
 ```
 

@@ -2,10 +2,18 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
-COPY . .
+RUN pip install --no-cache-dir uv
+
+COPY pyproject.toml uv.lock README.md ./
+COPY environment.py inference.py graders.py openenv.yaml ./
+COPY server ./server
+
+RUN uv sync --frozen --no-dev
+
+ENV PATH="/app/.venv/bin:${PATH}"
 
 EXPOSE 8000
-CMD ["uvicorn", "environment:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["server"]

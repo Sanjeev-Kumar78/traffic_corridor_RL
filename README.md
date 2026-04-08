@@ -17,6 +17,28 @@ app_port: 8000
 
 Autonomous Traffic Corridor Pro is an innovative OpenEnv environment that combines **Large Language Model intelligence** with **deterministic heuristic control** for real-world traffic management.
 
+## 🧭 Architecture
+
+```mermaid
+flowchart LR
+    subgraph SPACE["HF Docker Space (app_port: 8000)"]
+        INF["inference.py"]
+        ENV["environment.py<br/>/reset /state /step /history"]
+        GRD["graders.py"]
+    end
+
+    INF -->|GET /state| ENV
+    INF -->|POST /step actions| ENV
+    ENV -->|state, reward, done, info| INF
+    INF -->|GET /history (episode end)| ENV
+    INF -->|history| GRD
+    GRD -->|score in [0,1]| INF
+
+    INF -->|chat.completions<br/>API_BASE_URL + MODEL_NAME + HF_TOKEN| HF["HF Router (OpenAI-compatible)"]
+    HF --> R1["deepseek-ai/DeepSeek-R1"]
+    R1 -->|policy JSON| INF
+```
+
 ## 🎯 X-Factors
 
 - 🧠 **LLM-Guided Policy Tuning** - DeepSeek-R1 optimizes heuristic parameters per task

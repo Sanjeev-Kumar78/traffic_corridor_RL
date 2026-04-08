@@ -1,10 +1,11 @@
 ---
 title: Autonomous Traffic Corridor Pro
-emoji: 🚦
+emoji: 🚀
 colorFrom: blue
 colorTo: green
 sdk: docker
 app_port: 8000
+license: apache-2.0
 ---
 
 # 🚦 Autonomous Traffic Corridor Pro

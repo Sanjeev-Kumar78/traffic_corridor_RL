@@ -1,0 +1,10 @@
+name: Autonomous Traffic Corridor Pro
+version: 2.0.0
+description: Multi-objective traffic control with complex phasing and emergency vehicle routing.
+tasks:
+  - id: easy_4_phase
+    description: Single intersection with 4 phases (straight and left turns) under uniform load.
+  - id: medium_asymmetric
+    description: Single intersection heavily skewed towards N/S straight traffic, requiring phase skipping.
+  - id: hard_corridor_emergency
+    description: 3-intersection corridor with stochastic emergency vehicle injection requiring immediate preemption.

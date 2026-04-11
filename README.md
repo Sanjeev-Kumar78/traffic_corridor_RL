@@ -1,6 +1,6 @@
 ---
-title: Autonomous Traffic Corridor Pro
-emoji: 🚀
+title: Traffic Corridor Pro
+emoji: 🚦
 colorFrom: blue
 colorTo: green
 sdk: docker
@@ -8,160 +8,130 @@ app_port: 8000
 license: apache-2.0
 ---
 
-# 🚦 Autonomous Traffic Corridor Pro
+# Traffic Corridor Pro
 
-> **LLM-Enhanced Traffic Control System for Multi-Intersection Coordination with Emergency Vehicle Prioritization**
+Real-world OpenEnv benchmark for adaptive traffic signal control with emergency-priority behavior and corridor coordination.
 
 [![Hugging Face Space](https://img.shields.io/badge/dynamic/json?label=HF%20Space&query=%24.runtime.stage&url=https://huggingface.co/api/spaces/Sanjeev-Kumar78/traffic_corridor_RL&logo=huggingface&style=for-the-badge&color=brightgreen&labelColor=151515)](https://huggingface.co/spaces/Sanjeev-Kumar78/traffic_corridor_RL)
 [![HF Hardware](https://img.shields.io/badge/dynamic/json?label=Hardware&query=%24.runtime.hardware.current&url=https://huggingface.co/api/spaces/Sanjeev-Kumar78/traffic_corridor_RL&style=for-the-badge&color=007ec6&labelColor=151515)](https://huggingface.co/spaces/Sanjeev-Kumar78/traffic_corridor_RL)
 [![GitHub](https://img.shields.io/badge/GitHub-traffic__corridor__RL-181717?logo=github&style=for-the-badge)](https://github.com/Sanjeev-Kumar78/traffic_corridor_RL)
 
-Autonomous Traffic Corridor Pro is an innovative OpenEnv environment that combines **Large Language Model intelligence** with **deterministic heuristic control** for real-world traffic management.
+## Project Links
 
-- **GitHub:** https://github.com/Sanjeev-Kumar78/traffic_corridor_RL
-- **Hugging Face Space:** https://huggingface.co/spaces/Sanjeev-Kumar78/traffic_corridor_RL
-
-## 🧭 Architecture
-
-```mermaid
-flowchart LR
-    subgraph SPACE["HF Docker Space (app_port: 8000)"]
-        INF["inference.py"]
-        ENV["environment.py (reset, state, step, history)"]
-        GRD["graders.py"]
-    end
-
-    INF -->|GET state| ENV
-    INF -->|POST step actions| ENV
-    ENV -->|state, reward, done, info| INF
-    INF -->|GET history end| ENV
-    INF -->|history| GRD
-    GRD -->|score 0 to 1| INF
-
-    INF -->|LLM policy request| HF["HF Router (OpenAI compatible)"]
-    HF --> R1["deepseek-ai/DeepSeek-R1"]
-    R1 -->|policy JSON| INF
-```
-
-## 🎯 X-Factors
-
-- 🧠 **LLM-Guided Policy Tuning** - DeepSeek-R1 optimizes heuristic parameters per task
-- 🚨 **Emergency Prioritization** - Aggressive preemption under emergency-heavy traffic
-- 🌊 **Corridor Coordination** - Multi-intersection green-wave style control
-- ⚡ **Fast & Robust** - Runs in <1 min, graceful fallback to hardcoded policy
-- 🏗️ **Production Ready** - Real-world applicable traffic control system
-
-## 📊 Performance
-
-| Task                    | Score | Time | Key Metric                        |
-| ----------------------- | ----- | ---- | --------------------------------- |
-| easy_4_phase            | 0.95  | 45s  | Stable phase discipline           |
-| medium_asymmetric       | 0.98  | 45s  | Smart phase skipping              |
-| hard_corridor_emergency | 0.21  | 45s  | Strict emergency/gridlock penalty |
-
-**Average (current verified run): 0.71**
-
-See [BENCHMARKS.md](BENCHMARKS.md) for detailed analysis.
+- GitHub: https://github.com/Sanjeev-Kumar78/traffic_corridor_RL
+- Hugging Face Space: https://huggingface.co/spaces/Sanjeev-Kumar78/traffic_corridor_RL
 
 ## Tasks
 
-- `easy_4_phase`: one balanced intersection to learn basic phase rotation without excessive switching.
-- `medium_asymmetric`: one skewed intersection where north/south straight traffic dominates.
-- `hard_corridor_emergency`: a 3-intersection corridor that rewards green-wave behavior while punishing emergency delay.
+- `easy_4_phase`: one balanced intersection.
+- `medium_asymmetric`: one intersection with directional imbalance.
+- `hard_corridor_emergency`: three-intersection corridor with emergency pressure and downstream coupling.
 
-## State (`GET /state`)
+## API Summary
 
-The environment returns a JSON snapshot with:
+- `POST /reset` with `{ "task_id": "..." }`
+- `GET /state`
+- `POST /step` with `{ "actions": [{ "intersection_id": 0, "phase": 0 }] }`
+- `GET /history`
 
-- `step`, `max_steps`, and `task_id`
-- per-intersection `current_phase`, `in_transition`, and `switch_cooldown_remaining`
-- per-lane `queue`, `wait_time`, and `emergency`
-
-Lane and phase mapping:
+Phase map:
 
 - `0`: `N_S_Straight`
 - `1`: `N_S_Left`
 - `2`: `E_W_Straight`
 - `3`: `E_W_Left`
 
-## Actions (`POST /step`)
+## Hugging Face Space UI
 
-Submit:
+The root route `/` serves a built-in browser UI.
 
-```json
-{
-  "actions": [{ "intersection_id": 0, "phase": 0 }]
-}
-```
+- Interactive mode: call reset/state/history/step directly.
+- Direct-route mode: set base URL to your HF Space URL and open endpoint links.
 
-Switching to a different phase triggers a strict 2-step cooldown with zero throughput, so agents should avoid flickering.
-
-## Reward Dynamics
-
-- `-0.1` per waiting vehicle per step
-- `-5.0` per phase switch
-- `-20.0` per step that an emergency vehicle remains queued
-
-## Baseline Inference Agent
-
-The hackathon dashboard requires these environment variables to be defined for inference:
-
-- `API_BASE_URL`: LLM endpoint
-- `MODEL_NAME`: model identifier
-- `HF_TOKEN`: Hugging Face token / API key
-
-This project uses the OpenAI Python client against Hugging Face's OpenAI-compatible router, which lets you use open-source models without OpenAI credits.
-
-Recommended environment variables:
+Optional env for prefilled Space URL in the UI:
 
 ```bash
-set API_BASE_URL=https://router.huggingface.co/v1
-set MODEL_NAME=deepseek-ai/DeepSeek-R1
-set HF_TOKEN=your_hf_token
-set ENV_BASE_URL=http://localhost:8000
-set POLICY_MAX_TOKENS=220
+HF_SPACE_URL=https://your-space-name.hf.space
 ```
 
-`inference.py` emits structured `[START]`, `[STEP]`, and `[END]` logs for evaluator compatibility. It asks the model for a task-level heuristic policy once per episode, then runs a deterministic local controller for speed and reproducibility.
+## Inference
+
+`inference.py` uses OpenAI-compatible HF routing, prints strict evaluator logs, and scores trajectories with deterministic graders.
+
+Required env vars:
+
+- `API_BASE_URL`
+- `MODEL_NAME`
+- `HF_TOKEN`
+
+Common optional env vars:
+
+- `ENV_BASE_URL` (default `http://localhost:8000`)
+- `TRAFFIC_CORRIDOR_TASKS`
+- `SUCCESS_SCORE_THRESHOLD`
 
 ## Local Run
 
-### Option A: Recommended (`uv` + `pyproject.toml`)
+### Recommended (uv)
 
 ```bash
-# from traffic_corridor_pro/
 uv sync
 uv run server
 ```
 
-In a second terminal:
+Second terminal:
 
 ```bash
 uv run python inference.py
 ```
 
-### Option B: Fallback (`pip` + `requirements.txt`)
+### Fallback (venv + pip)
 
 ```bash
-# from traffic_corridor_pro/
 python -m venv .venv
-# Windows PowerShell:
 .venv\Scripts\Activate.ps1
-# Linux/macOS:
-# source .venv/bin/activate
 pip install -r requirements.txt
 uvicorn environment:app --host 0.0.0.0 --port 8000
 ```
 
-In a second terminal (same activated env):
+Second terminal:
 
 ```bash
 python inference.py
 ```
 
-## Submission Note
+## Docker
 
-For submission, these files should be present at the project root:
+```bash
+docker build -t traffic-corridor-pro:latest .
+docker run --rm -p 8000:8000 traffic-corridor-pro:latest
+```
+
+## Final Verified Scores
+
+Latest validated full-suite run:
+
+- `easy_4_phase`: `0.790`
+- `medium_asymmetric`: `0.763`
+- `hard_corridor_emergency`: `0.668`
+
+## Final Test Logging
+
+Run and save a latest log:
+
+```bash
+python inference.py > final_test_latest.log
+```
+
+Timestamped + latest pointer (PowerShell):
+
+```bash
+$ts = Get-Date -Format 'yyyyMMdd_HHmmss'
+python inference.py *> "final_test_$ts.log"
+Copy-Item "final_test_$ts.log" final_test_latest.log -Force
+```
+
+## Submission Files
 
 - `Dockerfile`
 - `environment.py`

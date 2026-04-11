@@ -5,97 +5,101 @@ def clamp01(value: float) -> float:
     return max(0.0, min(1.0, value))
 
 
-def normalize_reward(total_reward: float, best_reward: float, worst_reward: float) -> float:
-    """
-    Map total reward to [0, 1].
-    best_reward: expected strong run (higher / less negative)
-    worst_reward: expected poor run (lower / more negative)
-    """
-    if best_reward <= worst_reward:
-        raise ValueError("best_reward must be greater than worst_reward")
-    return clamp01((total_reward - worst_reward) / (best_reward - worst_reward))
+def _count_phase_changes(history: List[Dict[str, Any]]) -> int:
+    phase_changes = 0
+    previous_phases: Dict[int, int] = {}
+    for step in history:
+        for inter in step.get("state", []):
+            iid = int(inter.get("id", 0))
+            phase = int(inter.get("current_phase", 0))
+            if iid in previous_phases and previous_phases[iid] != phase:
+                phase_changes += 1
+            previous_phases[iid] = phase
+    return phase_changes
 
 
-def extract_metrics(history: List[Dict[str, Any]]) -> Dict[str, float]:
+def _extract_metrics(history: List[Dict[str, Any]]) -> Dict[str, float]:
     if not history:
         return {
-            "total_reward": 0.0,
-            "min_reward": 0.0,
-            "final_queue": 0.0,
-            "emergency_active_steps": 0.0,
+            "avg_reward": 0.0,
+            "final_queue": 100.0,
+            "phase_changes": 0.0,
+            "emergency_steps_any": 0.0,
+            "emergency_steps_ns": 0.0,
+            "queue_component_avg": 0.0,
         }
 
     rewards = [float(step.get("reward", 0.0)) for step in history]
-    total_reward = sum(rewards)
-    min_reward = min(rewards)
-
+    queue_components = [float(step.get("queue_component", 0.0))
+                        for step in history]
     final_state = history[-1].get("state", [])
-    final_queue = 0
-    for inter in final_state:
-        lanes = inter.get("lanes", {})
-        for lane in lanes.values():
-            final_queue += int(lane.get("queue", 0))
 
-    emergency_active_steps = 0
+    final_queue = 0
+    emergency_steps_any = 0
+    emergency_steps_ns = 0
+
     for step in history:
         state = step.get("state", [])
-        has_emergency = any(
-            lane.get("emergency", False)
+        has_any = any(
+            bool(lane.get("emergency", False))
             for inter in state
             for lane in inter.get("lanes", {}).values()
         )
-        if has_emergency:
-            emergency_active_steps += 1
+        has_ns = any(
+            bool(inter.get("lanes", {}).get(
+                "N_S_Straight", {}).get("emergency", False))
+            for inter in state
+        )
+        if has_any:
+            emergency_steps_any += 1
+        if has_ns:
+            emergency_steps_ns += 1
+
+    for inter in final_state:
+        for lane in inter.get("lanes", {}).values():
+            final_queue += int(lane.get("queue", 0))
 
     return {
-        "total_reward": float(total_reward),
-        "min_reward": float(min_reward),
+        "avg_reward": sum(rewards) / len(rewards),
         "final_queue": float(final_queue),
-        "emergency_active_steps": float(emergency_active_steps),
+        "phase_changes": float(_count_phase_changes(history)),
+        "emergency_steps_any": float(emergency_steps_any),
+        "emergency_steps_ns": float(emergency_steps_ns),
+        "queue_component_avg": sum(queue_components) / len(queue_components),
     }
 
 
 def grade_easy_4_phase(history: List[Dict[str, Any]]) -> float:
-    metrics = extract_metrics(history)
-    reward_score = normalize_reward(
-        metrics["total_reward"], best_reward=-300.0, worst_reward=-2200.0
-    )
-    queue_score = clamp01((20.0 - metrics["final_queue"]) / 20.0)
-    score = 0.85 * reward_score + 0.15 * queue_score
-    return round(clamp01(score), 2)
+    metrics = _extract_metrics(history)
+    reward_score = clamp01(metrics["avg_reward"])
+    queue_score = clamp01((18.0 - metrics["final_queue"]) / 18.0)
+    phase_score = clamp01((metrics["phase_changes"] - 8.0) / 24.0)
+    score = 0.60 * reward_score + 0.25 * queue_score + 0.15 * phase_score
+    return round(clamp01(score), 3)
 
 
 def grade_medium_asymmetric(history: List[Dict[str, Any]]) -> float:
-    metrics = extract_metrics(history)
-    reward_score = normalize_reward(
-        metrics["total_reward"], best_reward=-600.0, worst_reward=-3600.0
-    )
-    queue_score = clamp01((24.0 - metrics["final_queue"]) / 24.0)
-    score = 0.8 * reward_score + 0.2 * queue_score
-    return round(clamp01(score), 2)
+    metrics = _extract_metrics(history)
+    reward_score = clamp01(metrics["avg_reward"])
+    queue_score = clamp01((22.0 - metrics["final_queue"]) / 22.0)
+    switch_score = clamp01((metrics["phase_changes"] - 10.0) / 30.0)
+    score = 0.55 * reward_score + 0.25 * queue_score + 0.20 * switch_score
+    return round(clamp01(score), 3)
 
 
 def grade_hard_corridor_emergency(history: List[Dict[str, Any]]) -> float:
-    metrics = extract_metrics(history)
-
-    # Hard task combines reward with reliability signals:
-    # - severe single-step collapses (very negative min reward)
-    # - unresolved congestion at the end
-    # - prolonged emergency presence
-    reward_score = normalize_reward(
-        metrics["total_reward"], best_reward=-700.0, worst_reward=-3800.0
-    )
-    worst_step_score = clamp01((metrics["min_reward"] - (-30.0)) / 30.0)
-    queue_score = clamp01((15.0 - metrics["final_queue"]) / 15.0)
-    emergency_score = clamp01((20.0 - metrics["emergency_active_steps"]) / 20.0)
-
+    metrics = _extract_metrics(history)
+    reward_score = clamp01(metrics["avg_reward"])
+    queue_score = clamp01((28.0 - metrics["final_queue"]) / 28.0)
+    emergency_score = clamp01((45.0 - metrics["emergency_steps_ns"]) / 45.0)
+    stability_score = clamp01(metrics["queue_component_avg"])
     score = (
-        0.2 * reward_score
-        + 0.4 * worst_step_score
-        + 0.2 * queue_score
-        + 0.2 * emergency_score
+        0.35 * reward_score
+        + 0.20 * queue_score
+        + 0.30 * emergency_score
+        + 0.15 * stability_score
     )
-    return round(clamp01(score), 2)
+    return round(clamp01(score), 3)
 
 
 TASK_GRADERS = {

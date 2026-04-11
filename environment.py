@@ -1,3 +1,4 @@
+import json
 import os
 import random
 from typing import Any, Dict, List, Literal, Optional, Tuple
@@ -442,7 +443,7 @@ def step(payload: TrafficAction) -> StepResponse:
 
 @app.get("/", response_class=HTMLResponse)
 def index() -> HTMLResponse:
-        html = f"""
+    html = f"""
 <!doctype html>
 <html lang="en">
 <head>
@@ -590,4 +591,4 @@ def index() -> HTMLResponse:
 </body>
 </html>
 """
-        return HTMLResponse(content=html)
+    return HTMLResponse(content=html)

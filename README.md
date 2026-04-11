@@ -21,6 +21,21 @@ Real-world OpenEnv benchmark for adaptive traffic signal control with emergency-
 - GitHub: https://github.com/Sanjeev-Kumar78/traffic_corridor_RL
 - Hugging Face Space: https://huggingface.co/spaces/Sanjeev-Kumar78/traffic_corridor_RL
 
+## Quick Start
+
+Run locally in two commands:
+
+```bash
+uv sync
+uv run server
+```
+
+Then in a second terminal:
+
+```bash
+uv run python inference.py
+```
+
 ## Tasks
 
 - `easy_4_phase`: one balanced intersection.
@@ -33,6 +48,16 @@ Real-world OpenEnv benchmark for adaptive traffic signal control with emergency-
 - `GET /state`
 - `POST /step` with `{ "actions": [{ "intersection_id": 0, "phase": 0 }] }`
 - `GET /history`
+
+### Endpoint Compatibility Matrix
+
+| Route      | Method | Expected      | Notes                          |
+| ---------- | ------ | ------------- | ------------------------------ |
+| `/`        | GET    | 200 (HTML UI) | Root interactive UI            |
+| `/state`   | GET    | 200 (JSON)    | Current environment state      |
+| `/history` | GET    | 200 (JSON)    | Trajectory history             |
+| `/reset`   | POST   | 200 (JSON)    | Accepts `{ "task_id": "..." }` |
+| `/step`    | POST   | 200 (JSON)    | Accepts action payload         |
 
 Phase map:
 
@@ -114,22 +139,6 @@ Latest validated full-suite run:
 - `easy_4_phase`: `0.790`
 - `medium_asymmetric`: `0.763`
 - `hard_corridor_emergency`: `0.668`
-
-## Final Test Logging
-
-Run and save a latest log:
-
-```bash
-python inference.py > final_test_latest.log
-```
-
-Timestamped + latest pointer (PowerShell):
-
-```bash
-$ts = Get-Date -Format 'yyyyMMdd_HHmmss'
-python inference.py *> "final_test_$ts.log"
-Copy-Item "final_test_$ts.log" final_test_latest.log -Force
-```
 
 ## Submission Files
 

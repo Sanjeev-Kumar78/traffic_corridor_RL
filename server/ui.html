@@ -305,7 +305,9 @@
             <button onclick="resetTask()">POST /reset</button>
             <button onclick="getState()">GET /state</button>
             <button onclick="getHistory()">GET /history</button>
-            <button class="primary" onclick="runInference()">Run inference.py</button>
+            <button class="primary" onclick="runInference()">
+              Run inference.py
+            </button>
           </div>
           <p class="muted">Use reset first, then step repeatedly.</p>
         </section>
@@ -341,7 +343,9 @@
           </thead>
           <tbody>
             <tr>
-              <td colspan="4" class="muted">Run inference.py to populate scores.</td>
+              <td colspan="4" class="muted">
+                Run inference.py to populate scores.
+              </td>
             </tr>
           </tbody>
         </table>
@@ -415,9 +419,94 @@
         return Number(score).toFixed(3);
       }
 
+      function extractInferenceRunsFromText(text) {
+        const runs = [];
+        let currentTask = "";
+
+        String(text || "")
+          .split(/\r?\n/)
+          .forEach((line) => {
+            if (line.startsWith("[START]")) {
+              const taskMatch = line.match(/task=([^\s]+)/);
+              currentTask = taskMatch ? taskMatch[1] : currentTask;
+              return;
+            }
+
+            if (!line.startsWith("[END]")) {
+              return;
+            }
+
+            const payload = {};
+            line
+              .split(/\s+/)
+              .slice(1)
+              .forEach((token) => {
+                const separatorIndex = token.indexOf("=");
+                if (separatorIndex === -1) {
+                  return;
+                }
+                const key = token.slice(0, separatorIndex);
+                const value = token.slice(separatorIndex + 1);
+                payload[key] = value;
+              });
+
+            const rewards = String(payload.rewards || "")
+              .split(",")
+              .map((value) => Number(value.trim()))
+              .filter((value) => Number.isFinite(value));
+
+            runs.push({
+              task_id: currentTask,
+              success:
+                String(payload.success || "false").toLowerCase() === "true",
+              steps: Number(payload.steps || 0),
+              score: Number(payload.score || 0),
+              rewards,
+            });
+          });
+
+        return runs;
+      }
+
+      function normalizeInferencePayload(payload) {
+        const rawOutput =
+          typeof payload === "string" ? payload : payload?.output || "";
+        const parsedRuns =
+          Array.isArray(payload?.runs) && payload.runs.length
+            ? payload.runs
+            : extractInferenceRunsFromText(rawOutput);
+        const scores = parsedRuns
+          .map((run) => Number(run.score))
+          .filter((value) => Number.isFinite(value));
+
+        const summary =
+          payload?.summary && typeof payload.summary === "object"
+            ? payload.summary
+            : {};
+
+        return {
+          success: Boolean(payload?.success),
+          summary: {
+            task_count: summary.task_count ?? parsedRuns.length,
+            average_score:
+              summary.average_score ??
+              (scores.length
+                ? scores.reduce((sum, value) => sum + value, 0) / scores.length
+                : 0),
+            best_score:
+              summary.best_score ?? (scores.length ? Math.max(...scores) : 0),
+            worst_score:
+              summary.worst_score ?? (scores.length ? Math.min(...scores) : 0),
+          },
+          runs: parsedRuns,
+          output: rawOutput,
+        };
+      }
+
       function renderInferenceResult(data) {
-        const summary = data.summary || {};
-        const runs = Array.isArray(data.runs) ? data.runs : [];
+        const normalized = normalizeInferencePayload(data);
+        const summary = normalized.summary || {};
+        const runs = Array.isArray(normalized.runs) ? normalized.runs : [];
 
         document.getElementById("inferenceSummary").textContent =
           runs.length === 0
@@ -442,8 +531,9 @@
               .join("")
           : '<tr><td colspan="4" class="muted">No scores parsed from output.</td></tr>';
 
-        document.getElementById("inferenceTable").querySelector("tbody").innerHTML =
-          rows;
+        document
+          .getElementById("inferenceTable")
+          .querySelector("tbody").innerHTML = rows;
       }
 
       async function fetchText(path, options) {
@@ -535,6 +625,13 @@
 
       async function runInference() {
         setAppStatus("Running inference...", "warn");
+        document.getElementById("inferenceSummary").textContent =
+          "Running inference.py...";
+        document
+          .getElementById("inferenceTable")
+          .querySelector("tbody").innerHTML =
+          '<tr><td colspan="4" class="muted">Running inference.py...</td></tr>';
+        clearOutput();
         try {
           const result = await fetchText("/run-inference", {
             method: "POST",
@@ -548,12 +645,15 @@
 
           if (!result.ok) {
             setAppStatus(`Inference failed (${result.status})`, "fail");
-            printOutput(payload);
+            const normalized = normalizeInferencePayload(payload);
+            renderInferenceResult(normalized);
+            printOutput(normalized.output || payload);
             return;
           }
 
           setAppStatus(`Inference done (${result.status})`, "ok");
-          renderInferenceResult(payload);
+          const normalized = normalizeInferencePayload(payload);
+          renderInferenceResult(normalized);
           printOutput(payload);
         } catch (error) {
           setAppStatus("Inference error", "fail");

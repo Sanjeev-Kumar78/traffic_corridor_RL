@@ -1,6 +1,9 @@
 import json
 import os
 import random
+import subprocess
+import sys
+from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Tuple
 
 from fastapi import FastAPI, HTTPException, Request
@@ -9,6 +12,7 @@ from pydantic import BaseModel, Field
 
 app = FastAPI(title="Traffic Corridor Pro")
 DEFAULT_HF_SPACE_URL = os.getenv("HF_SPACE_URL", "").strip()
+UI_TEMPLATE_PATH = Path(__file__).resolve().parent / "server" / "ui.html"
 
 
 LANE_GROUPS = ["N_S_Straight", "N_S_Left", "E_W_Straight", "E_W_Left"]
@@ -96,6 +100,21 @@ class StepResponse(BaseModel):
 
 class HistoryResponse(BaseModel):
     history: List[Dict[str, Any]]
+
+
+class InferenceRunEntry(BaseModel):
+    task_id: str
+    success: bool
+    steps: int
+    score: float
+    rewards: List[float]
+
+
+class InferenceRunResponse(BaseModel):
+    success: bool
+    summary: Dict[str, Any]
+    runs: List[InferenceRunEntry]
+    output: str
 
 
 class _Intersection:
@@ -431,6 +450,91 @@ def get_history() -> HistoryResponse:
     return HistoryResponse(history=env.history)
 
 
+def _parse_inference_output(output: str) -> List[Dict[str, Any]]:
+    runs: List[Dict[str, Any]] = []
+    current_task = ""
+    for line in output.splitlines():
+        if line.startswith("[START]"):
+            for token in line.split()[1:]:
+                if token.startswith("task="):
+                    current_task = token.split("=", 1)[1]
+                    break
+            continue
+
+        if not line.startswith("[END]"):
+            continue
+
+        payload: Dict[str, Any] = {}
+        for token in line.split()[1:]:
+            if "=" not in token:
+                continue
+            key, value = token.split("=", 1)
+            payload[key] = value
+
+        rewards_text = payload.get("rewards", "")
+        rewards: List[float] = []
+        if rewards_text:
+            for item in rewards_text.split(","):
+                item = item.strip()
+                if not item:
+                    continue
+                try:
+                    rewards.append(float(item))
+                except ValueError:
+                    continue
+
+        runs.append(
+            {
+                "task_id": current_task,
+                "success": payload.get("success", "false").lower() == "true",
+                "steps": int(payload.get("steps", "0") or 0),
+                "score": float(payload.get("score", "0") or 0.0),
+                "rewards": rewards,
+            }
+        )
+
+    return runs
+
+
+@app.post("/run-inference", response_model=InferenceRunResponse)
+def run_inference(request: Request) -> InferenceRunResponse:
+    project_root = Path(__file__).resolve().parent
+    env = os.environ.copy()
+    env["ENV_BASE_URL"] = str(request.base_url).rstrip("/")
+    env.setdefault("API_BASE_URL", os.getenv("API_BASE_URL", "https://router.huggingface.co/v1"))
+    env.setdefault("MODEL_NAME", os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct"))
+    env.setdefault("HF_TOKEN", os.getenv("HF_TOKEN", ""))
+
+    try:
+        completed = subprocess.run(
+            [sys.executable, "inference.py"],
+            cwd=project_root,
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=1800,
+            check=False,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise HTTPException(status_code=504, detail="inference.py timed out") from exc
+
+    output = (completed.stdout or "") + ("\n" + completed.stderr if completed.stderr else "")
+    runs = _parse_inference_output(output)
+    scores = [entry["score"] for entry in runs]
+    summary = {
+        "task_count": len(runs),
+        "average_score": round(sum(scores) / len(scores), 3) if scores else 0.0,
+        "best_score": round(max(scores), 3) if scores else 0.0,
+        "worst_score": round(min(scores), 3) if scores else 0.0,
+    }
+    return InferenceRunResponse(
+        success=completed.returncode == 0,
+        summary=summary,
+        runs=[InferenceRunEntry(**entry) for entry in runs],
+        output=output,
+    )
+
+
 @app.post("/step", response_model=StepResponse)
 def step(payload: TrafficAction) -> StepResponse:
     result = env.step(payload)
@@ -443,152 +547,13 @@ def step(payload: TrafficAction) -> StepResponse:
 
 @app.get("/", response_class=HTMLResponse)
 def index() -> HTMLResponse:
-    html = f"""
-<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Traffic Corridor Pro UI</title>
-    <style>
-        body {{ font-family: Segoe UI, Arial, sans-serif; margin: 20px; max-width: 1080px; }}
-        h1, h2 {{ margin-bottom: 8px; }}
-        .row {{ display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }}
-        .card {{ border: 1px solid #d7d7d7; border-radius: 8px; padding: 12px; margin: 12px 0; }}
-        input, select, textarea, button {{ font-size: 14px; padding: 6px; }}
-        textarea {{ width: 100%; min-height: 120px; font-family: Consolas, monospace; }}
-        pre {{ background: #f6f6f6; border: 1px solid #e3e3e3; border-radius: 8px; padding: 10px; overflow: auto; }}
-        .links a {{ margin-right: 10px; }}
-        .muted {{ color: #666; font-size: 13px; }}
-    </style>
-</head>
-<body>
-    <h1>Traffic Corridor Pro</h1>
-    <p class="muted">Interactive controls + direct route links for Hugging Face Space endpoints.</p>
+    try:
+        template = UI_TEMPLATE_PATH.read_text(encoding="utf-8")
+    except OSError:
+        return HTMLResponse(
+            content="<h1>Traffic Corridor Pro</h1><p>UI template is missing.</p>",
+            status_code=500,
+        )
 
-    <div class="card">
-        <h2>Target Base URL</h2>
-        <div class="row">
-            <input id="baseUrl" size="70" />
-            <button onclick="useCurrentOrigin()">Use Current Origin</button>
-            <button onclick="applyBaseUrl()">Apply</button>
-        </div>
-        <p class="muted">Set this to your HF Space URL for direct routing, e.g. https://your-space.hf.space</p>
-        <div class="links" id="routeLinks"></div>
-    </div>
-
-    <div class="card">
-        <h2>Reset</h2>
-        <div class="row">
-            <select id="taskId">
-                <option value="easy_4_phase">easy_4_phase</option>
-                <option value="medium_asymmetric">medium_asymmetric</option>
-                <option value="hard_corridor_emergency">hard_corridor_emergency</option>
-            </select>
-            <button onclick="resetTask()">POST /reset</button>
-        </div>
-    </div>
-
-    <div class="card">
-        <h2>State / History</h2>
-        <div class="row">
-            <button onclick="getState()">GET /state</button>
-            <button onclick="getHistory()">GET /history</button>
-        </div>
-    </div>
-
-    <div class="card">
-        <h2>Step</h2>
-        <p class="muted">Send action payload JSON for POST /step</p>
-        <textarea id="stepPayload">{{
-    "actions": [
-        {{ "intersection_id": 0, "phase": 0 }}
-    ]
-}}</textarea>
-        <div class="row">
-            <button onclick="postStep()">POST /step</button>
-        </div>
-    </div>
-
-    <div class="card">
-        <h2>Response</h2>
-        <pre id="output">Ready.</pre>
-    </div>
-
-<script>
-    const defaultSpaceUrl = {json.dumps(DEFAULT_HF_SPACE_URL)};
-
-    function getBaseUrl() {{
-        const value = document.getElementById('baseUrl').value.trim();
-        return value || window.location.origin;
-    }}
-
-    function applyBaseUrl() {{
-        const base = getBaseUrl();
-        const links = [
-            ['Open /reset route', base + '/reset'],
-            ['Open /state route', base + '/state'],
-            ['Open /history route', base + '/history'],
-            ['Open /step route', base + '/step'],
-        ];
-        document.getElementById('routeLinks').innerHTML = links
-            .map(([label, url]) => `<a href="${{url}}" target="_blank" rel="noreferrer">${{label}}</a>`)
-            .join('');
-    }}
-
-    function useCurrentOrigin() {{
-        document.getElementById('baseUrl').value = window.location.origin;
-        applyBaseUrl();
-    }}
-
-    async function requestJson(path, options = {{}}) {{
-        const base = getBaseUrl();
-        const res = await fetch(base + path, options);
-        const text = await res.text();
-        let payload = text;
-        try {{ payload = JSON.parse(text); }} catch (_) {{}}
-        document.getElementById('output').textContent = JSON.stringify(payload, null, 2);
-    }}
-
-    async function resetTask() {{
-        const task = document.getElementById('taskId').value;
-        await requestJson('/reset', {{
-            method: 'POST',
-            headers: {{ 'Content-Type': 'application/json' }},
-            body: JSON.stringify({{ task_id: task }})
-        }});
-    }}
-
-    async function getState() {{
-        await requestJson('/state');
-    }}
-
-    async function getHistory() {{
-        await requestJson('/history');
-    }}
-
-    async function postStep() {{
-        const raw = document.getElementById('stepPayload').value;
-        let payload;
-        try {{
-            payload = JSON.parse(raw);
-        }} catch (e) {{
-            document.getElementById('output').textContent = 'Invalid JSON payload: ' + e.message;
-            return;
-        }}
-        await requestJson('/step', {{
-            method: 'POST',
-            headers: {{ 'Content-Type': 'application/json' }},
-            body: JSON.stringify(payload),
-        }});
-    }}
-
-    (function init() {{
-        document.getElementById('baseUrl').value = defaultSpaceUrl || window.location.origin;
-        applyBaseUrl();
-    }})();
-</script>
-</body>
-</html>
-"""
+    html = template.replace("__DEFAULT_SPACE_URL__", json.dumps(DEFAULT_HF_SPACE_URL))
     return HTMLResponse(content=html)

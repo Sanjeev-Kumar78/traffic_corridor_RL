@@ -1,0 +1,588 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Traffic Corridor Pro Console</title>
+    <style>
+      :root {
+        --bg: #f7fafc;
+        --panel: #ffffff;
+        --text: #0f172a;
+        --muted: #475569;
+        --border: #dbe3ee;
+        --accent: #0ea5e9;
+        --accent-2: #22c55e;
+        --warn: #f59e0b;
+        --danger: #ef4444;
+        --radius: 12px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 20px;
+        background: linear-gradient(180deg, #eff6ff 0%, var(--bg) 30%);
+        color: var(--text);
+        font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+      }
+
+      .wrap {
+        max-width: 1120px;
+        margin: 0 auto;
+      }
+
+      .hero {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 16px;
+        margin-bottom: 16px;
+        padding: 16px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--panel);
+      }
+
+      h1 {
+        margin: 0 0 6px 0;
+        font-size: 24px;
+        line-height: 1.2;
+      }
+
+      .muted {
+        margin: 0;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .status {
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        padding: 6px 10px;
+        font-size: 12px;
+        color: var(--muted);
+        background: #f8fafc;
+        white-space: nowrap;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 12px;
+      }
+
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 14px;
+      }
+
+      .card h2 {
+        margin: 0 0 10px 0;
+        font-size: 16px;
+      }
+
+      .row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+
+      input,
+      select,
+      textarea,
+      button {
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        font-size: 14px;
+        padding: 8px 10px;
+        background: #fff;
+        color: var(--text);
+      }
+
+      input,
+      select {
+        min-height: 38px;
+      }
+
+      input[type="text"] {
+        width: 100%;
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 130px;
+        resize: vertical;
+        font-family: Consolas, "Courier New", monospace;
+        line-height: 1.35;
+      }
+
+      button {
+        cursor: pointer;
+        border-color: #b6d4ff;
+        background: #eef6ff;
+      }
+
+      button.primary {
+        background: linear-gradient(180deg, #38bdf8, #0ea5e9);
+        border-color: #0284c7;
+        color: #fff;
+        font-weight: 600;
+      }
+
+      .route-links a {
+        display: inline-block;
+        margin-right: 8px;
+        margin-bottom: 6px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        text-decoration: none;
+        color: #0f172a;
+        background: #f8fafc;
+        font-size: 12px;
+      }
+
+      .endpoint-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+
+      .endpoint-table th,
+      .endpoint-table td {
+        border-bottom: 1px solid var(--border);
+        text-align: left;
+        padding: 8px 6px;
+      }
+
+      .badge {
+        display: inline-block;
+        border-radius: 999px;
+        padding: 2px 8px;
+        font-size: 11px;
+        font-weight: 600;
+        color: #fff;
+        background: #64748b;
+      }
+
+      .ok {
+        background: var(--accent-2);
+      }
+      .fail {
+        background: var(--danger);
+      }
+      .warn {
+        background: var(--warn);
+      }
+
+      pre {
+        margin: 0;
+        background: #0b1220;
+        color: #dbeafe;
+        border-radius: 10px;
+        border: 1px solid #1e293b;
+        padding: 12px;
+        min-height: 180px;
+        overflow: auto;
+        font-size: 12px;
+        line-height: 1.35;
+      }
+
+      .footer-note {
+        margin-top: 8px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <section class="hero">
+        <div>
+          <h1>Traffic Corridor Pro Console</h1>
+          <p class="muted">
+            Interactive API tester and direct route launcher for local server or
+            Hugging Face Space.
+          </p>
+        </div>
+        <div id="appStatus" class="status">Not checked</div>
+      </section>
+
+      <div class="grid">
+        <section class="card">
+          <h2>Target URL</h2>
+          <div class="row">
+            <input
+              id="baseUrl"
+              type="text"
+              placeholder="https://your-space.hf.space"
+            />
+          </div>
+          <div class="row">
+            <button onclick="useCurrentOrigin()">Use Current Origin</button>
+            <button onclick="applyBaseUrl()">Apply URL</button>
+            <button class="primary" onclick="pingRoot()">Check Root</button>
+          </div>
+          <p class="muted">
+            Tip: Paste your HF Space URL to test live endpoints directly.
+          </p>
+        </section>
+
+        <section class="card">
+          <h2>Direct Routes</h2>
+          <div class="route-links" id="routeLinks"></div>
+        </section>
+      </div>
+
+      <section class="card" style="margin-top: 12px">
+        <h2>Endpoint Checks</h2>
+        <div class="row">
+          <button onclick="checkEndpoints()">Run GET/POST Route Checks</button>
+        </div>
+        <table class="endpoint-table" id="endpointTable">
+          <thead>
+            <tr>
+              <th>Route</th>
+              <th>Method</th>
+              <th>Status</th>
+              <th>Code</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>/</td>
+              <td>GET</td>
+              <td><span class="badge">not-run</span></td>
+              <td>-</td>
+            </tr>
+            <tr>
+              <td>/state</td>
+              <td>GET</td>
+              <td><span class="badge">not-run</span></td>
+              <td>-</td>
+            </tr>
+            <tr>
+              <td>/history</td>
+              <td>GET</td>
+              <td><span class="badge">not-run</span></td>
+              <td>-</td>
+            </tr>
+            <tr>
+              <td>/reset</td>
+              <td>POST</td>
+              <td><span class="badge">not-run</span></td>
+              <td>-</td>
+            </tr>
+            <tr>
+              <td>/step</td>
+              <td>POST</td>
+              <td><span class="badge">not-run</span></td>
+              <td>-</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <div class="grid" style="margin-top: 12px">
+        <section class="card">
+          <h2>Run Actions</h2>
+          <div class="row">
+            <select id="taskId">
+              <option value="easy_4_phase">easy_4_phase</option>
+              <option value="medium_asymmetric">medium_asymmetric</option>
+              <option value="hard_corridor_emergency">
+                hard_corridor_emergency
+              </option>
+            </select>
+            <button onclick="resetTask()">POST /reset</button>
+            <button onclick="getState()">GET /state</button>
+            <button onclick="getHistory()">GET /history</button>
+            <button class="primary" onclick="runInference()">Run inference.py</button>
+          </div>
+          <p class="muted">Use reset first, then step repeatedly.</p>
+        </section>
+
+        <section class="card">
+          <h2>POST /step Payload</h2>
+          <textarea id="stepPayload">
+{
+  "actions": [
+    { "intersection_id": 0, "phase": 0 }
+  ]
+}</textarea
+          >
+          <div class="row">
+            <button class="primary" onclick="postStep()">POST /step</button>
+          </div>
+        </section>
+      </div>
+
+      <section class="card" style="margin-top: 12px">
+        <h2>Inference Results</h2>
+        <div id="inferenceSummary" class="muted" style="margin-bottom: 10px">
+          No inference run yet.
+        </div>
+        <table class="endpoint-table" id="inferenceTable">
+          <thead>
+            <tr>
+              <th>Task</th>
+              <th>Success</th>
+              <th>Steps</th>
+              <th>Score</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td colspan="4" class="muted">Run inference.py to populate scores.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="card" style="margin-top: 12px">
+        <h2>Response Viewer</h2>
+        <div class="row" style="margin-bottom: 10px">
+          <button onclick="clearOutput()">Clear response viewer</button>
+        </div>
+        <pre id="output">Ready.</pre>
+        <p class="footer-note">
+          All responses render here as pretty JSON (or plain text fallback).
+        </p>
+      </section>
+    </div>
+
+    <script>
+      const defaultSpaceUrl = __DEFAULT_SPACE_URL__;
+
+      function getBaseUrl() {
+        const value = document.getElementById("baseUrl").value.trim();
+        return value || window.location.origin;
+      }
+
+      function setAppStatus(text, kind) {
+        const node = document.getElementById("appStatus");
+        node.textContent = text;
+        node.style.borderColor =
+          kind === "ok" ? "#86efac" : kind === "fail" ? "#fca5a5" : "#fde68a";
+        node.style.background =
+          kind === "ok" ? "#f0fdf4" : kind === "fail" ? "#fef2f2" : "#fffbeb";
+        node.style.color =
+          kind === "ok" ? "#166534" : kind === "fail" ? "#991b1b" : "#92400e";
+      }
+
+      function applyBaseUrl() {
+        const base = getBaseUrl();
+        const links = ["/", "/state", "/history", "/reset", "/step"];
+        const html = links
+          .map(
+            (path) =>
+              `<a href="${base}${path}" target="_blank" rel="noreferrer">Open ${path}</a>`,
+          )
+          .join("");
+        document.getElementById("routeLinks").innerHTML = html;
+      }
+
+      function useCurrentOrigin() {
+        document.getElementById("baseUrl").value = window.location.origin;
+        applyBaseUrl();
+      }
+
+      function printOutput(payload) {
+        if (typeof payload === "string") {
+          document.getElementById("output").textContent = payload;
+        } else {
+          document.getElementById("output").textContent = JSON.stringify(
+            payload,
+            null,
+            2,
+          );
+        }
+      }
+
+      function clearOutput() {
+        document.getElementById("output").textContent = "Ready.";
+      }
+
+      function formatScore(score) {
+        return Number(score).toFixed(3);
+      }
+
+      function renderInferenceResult(data) {
+        const summary = data.summary || {};
+        const runs = Array.isArray(data.runs) ? data.runs : [];
+
+        document.getElementById("inferenceSummary").textContent =
+          runs.length === 0
+            ? "Inference completed, but no per-task scores were parsed."
+            : `Tasks: ${summary.task_count ?? runs.length}, average score ${formatScore(
+                summary.average_score ?? 0,
+              )}, best ${formatScore(summary.best_score ?? 0)}, worst ${formatScore(
+                summary.worst_score ?? 0,
+              )}`;
+
+        const rows = runs.length
+          ? runs
+              .map(
+                (run) => `
+                  <tr>
+                    <td>${run.task_id}</td>
+                    <td><span class="badge ${run.success ? "ok" : "fail"}">${run.success ? "true" : "false"}</span></td>
+                    <td>${run.steps}</td>
+                    <td>${formatScore(run.score)}</td>
+                  </tr>`,
+              )
+              .join("")
+          : '<tr><td colspan="4" class="muted">No scores parsed from output.</td></tr>';
+
+        document.getElementById("inferenceTable").querySelector("tbody").innerHTML =
+          rows;
+      }
+
+      async function fetchText(path, options) {
+        const base = getBaseUrl();
+        const res = await fetch(base + path, options || {});
+        const text = await res.text();
+        return { ok: res.ok, status: res.status, text };
+      }
+
+      async function requestJson(path, options) {
+        const result = await fetchText(path, options);
+        let payload = result.text;
+        try {
+          payload = JSON.parse(result.text);
+        } catch (_) {}
+        printOutput(payload);
+        return result;
+      }
+
+      async function pingRoot() {
+        try {
+          const res = await fetchText("/");
+          if (res.ok) {
+            setAppStatus(`Root OK (${res.status})`, "ok");
+          } else {
+            setAppStatus(`Root failed (${res.status})`, "fail");
+          }
+        } catch (e) {
+          setAppStatus(`Root error`, "fail");
+        }
+      }
+
+      function setRow(index, status, code) {
+        const rows = document.querySelectorAll("#endpointTable tbody tr");
+        const row = rows[index];
+        const badge = row.children[2].querySelector("span");
+        row.children[3].textContent = String(code);
+        badge.textContent = status;
+        badge.className =
+          "badge " +
+          (status === "ok" ? "ok" : status === "warn" ? "warn" : "fail");
+      }
+
+      async function checkEndpoints() {
+        const checks = [
+          { path: "/", method: "GET" },
+          { path: "/state", method: "GET" },
+          { path: "/history", method: "GET" },
+          { path: "/reset", method: "POST", body: { task_id: "easy_4_phase" } },
+          {
+            path: "/step",
+            method: "POST",
+            body: { actions: [{ intersection_id: 0, phase: 0 }] },
+          },
+        ];
+
+        for (let i = 0; i < checks.length; i += 1) {
+          const check = checks[i];
+          try {
+            const options = { method: check.method };
+            if (check.body) {
+              options.headers = { "Content-Type": "application/json" };
+              options.body = JSON.stringify(check.body);
+            }
+            const res = await fetchText(check.path, options);
+            setRow(i, res.ok ? "ok" : "fail", res.status);
+          } catch (_) {
+            setRow(i, "fail", "ERR");
+          }
+        }
+      }
+
+      async function resetTask() {
+        const task = document.getElementById("taskId").value;
+        await requestJson("/reset", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ task_id: task }),
+        });
+      }
+
+      async function getState() {
+        await requestJson("/state");
+      }
+
+      async function getHistory() {
+        await requestJson("/history");
+      }
+
+      async function runInference() {
+        setAppStatus("Running inference...", "warn");
+        try {
+          const result = await fetchText("/run-inference", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: "{}",
+          });
+          let payload = result.text;
+          try {
+            payload = JSON.parse(result.text);
+          } catch (_) {}
+
+          if (!result.ok) {
+            setAppStatus(`Inference failed (${result.status})`, "fail");
+            printOutput(payload);
+            return;
+          }
+
+          setAppStatus(`Inference done (${result.status})`, "ok");
+          renderInferenceResult(payload);
+          printOutput(payload);
+        } catch (error) {
+          setAppStatus("Inference error", "fail");
+          printOutput(String(error));
+        }
+      }
+
+      async function postStep() {
+        const raw = document.getElementById("stepPayload").value;
+        let payload;
+        try {
+          payload = JSON.parse(raw);
+        } catch (e) {
+          printOutput(`Invalid JSON payload: ${e.message}`);
+          return;
+        }
+        await requestJson("/step", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      }
+
+      (function init() {
+        document.getElementById("baseUrl").value =
+          defaultSpaceUrl || window.location.origin;
+        applyBaseUrl();
+        pingRoot();
+      })();
+    </script>
+  </body>
+</html>

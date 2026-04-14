@@ -44,20 +44,20 @@ uv run python inference.py
 
 ## API Summary
 
-- `POST /reset` with `{ "task_id": "..." }`
-- `GET /state`
-- `POST /step` with `{ "actions": [{ "intersection_id": 0, "phase": 0 }] }`
-- `GET /history`
+- `POST /reset` with `{ "task_id": "...", "seed": 77, "session_id": "optional" }`
+- `GET /state?session_id=...`
+- `POST /step?session_id=...` with `{ "actions": [{ "intersection_id": 0, "phase": 0 }] }`
+- `GET /history?session_id=...`
 
 ### Endpoint Compatibility Matrix
 
 | Route      | Method | Expected      | Notes                          |
 | ---------- | ------ | ------------- | ------------------------------ |
 | `/`        | GET    | 200 (HTML UI) | Root interactive UI            |
-| `/state`   | GET    | 200 (JSON)    | Current environment state      |
-| `/history` | GET    | 200 (JSON)    | Trajectory history             |
-| `/reset`   | POST   | 200 (JSON)    | Accepts `{ "task_id": "..." }` |
-| `/step`    | POST   | 200 (JSON)    | Accepts action payload         |
+| `/state`   | GET    | 200 (JSON)    | Current session state          |
+| `/history` | GET    | 200 (JSON)    | Session trajectory history     |
+| `/reset`   | POST   | 200 (JSON)    | Accepts `task_id`, `seed`, `session_id` |
+| `/step`    | POST   | 200 (JSON)    | Returns reward plus next observation |
 
 Phase map:
 
@@ -87,12 +87,16 @@ Required env vars:
 
 - `API_BASE_URL`
 - `MODEL_NAME`
+
+Optional for LLM-tuned policy hints:
+
 - `HF_TOKEN`
 
 Common optional env vars:
 
 - `ENV_BASE_URL` (default `http://localhost:8000`)
 - `TRAFFIC_CORRIDOR_TASKS`
+- `TRAFFIC_CORRIDOR_EVAL_SEEDS`
 - `SUCCESS_SCORE_THRESHOLD`
 
 ## Local Run
@@ -108,6 +112,12 @@ Second terminal:
 
 ```bash
 uv run python inference.py
+```
+
+Run tests:
+
+```bash
+python -B -m unittest discover -s tests -v
 ```
 
 ### Fallback (venv + pip)
@@ -134,11 +144,16 @@ docker run --rm -p 8000:8000 traffic-corridor-pro:latest
 
 ## Final Verified Scores
 
-Latest validated full-suite run:
+Latest validated 3-seed evaluation run:
 
-- `easy_4_phase`: `0.790`
-- `medium_asymmetric`: `0.763`
-- `hard_corridor_emergency`: `0.668`
+- `easy_4_phase`: `0.823`
+- `medium_asymmetric`: `0.747`
+- `hard_corridor_emergency`: `0.685`
+
+Trivial baselines for comparison:
+
+- `always_0`: `0.107 / 0.142 / 0.114`
+- `round_robin`: `0.181 / 0.194 / 0.015`
 
 ## Submission Files
 

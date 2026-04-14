@@ -201,6 +201,464 @@
         color: var(--muted);
         font-size: 12px;
       }
+
+      .viz-panel {
+        overflow: hidden;
+      }
+
+      .viz-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+
+      .viz-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+
+      .viz-stat {
+        padding: 12px;
+        border-radius: 16px;
+        border: 1px solid #d6dfec;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+      }
+
+      .viz-stat-label {
+        display: block;
+        margin-bottom: 6px;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .viz-stat-value {
+        display: block;
+        font-size: 22px;
+        font-weight: 700;
+        line-height: 1;
+      }
+
+      .viz-stat-note {
+        display: block;
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .viz-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+
+      .viz-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        border: 1px solid #d6dfec;
+        background: #f8fafc;
+        color: #0f172a;
+        font-size: 12px;
+      }
+
+      .viz-chip-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        background: #64748b;
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+      }
+
+      .viz-chip-dot.live {
+        background: #22c55e;
+      }
+
+      .viz-chip-dot.transition {
+        background: #f59e0b;
+      }
+
+      .viz-chip-dot.emergency {
+        background: #ef4444;
+      }
+
+      .viz-stage {
+        position: relative;
+        min-height: 340px;
+        padding: 18px;
+        border-radius: 22px;
+        border: 1px solid #cbd5e1;
+        background:
+          radial-gradient(circle at top left, rgba(14, 165, 233, 0.16), transparent 34%),
+          radial-gradient(circle at bottom right, rgba(34, 197, 94, 0.12), transparent 36%),
+          linear-gradient(180deg, #dbe7f3 0%, #edf3f9 100%);
+      }
+
+      .viz-stage.empty {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .viz-empty {
+        max-width: 380px;
+        padding: 18px 20px;
+        border-radius: 18px;
+        border: 1px dashed #94a3b8;
+        background: rgba(255, 255, 255, 0.8);
+        color: var(--muted);
+        text-align: center;
+        font-size: 14px;
+      }
+
+      .viz-corridor {
+        position: relative;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 18px;
+      }
+
+      .viz-corridor.multi::before {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 8%;
+        right: 8%;
+        height: 8px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, rgba(14, 165, 233, 0.15), rgba(14, 165, 233, 0.4), rgba(34, 197, 94, 0.15));
+        transform: translateY(-50%);
+        pointer-events: none;
+      }
+
+      .intersection-card {
+        position: relative;
+        z-index: 1;
+        padding: 14px;
+        border-radius: 22px;
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        background: rgba(255, 255, 255, 0.72);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 18px 38px rgba(15, 23, 42, 0.12);
+      }
+
+      .intersection-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: flex-start;
+        margin-bottom: 12px;
+      }
+
+      .intersection-title {
+        font-size: 15px;
+        font-weight: 700;
+      }
+
+      .intersection-sub {
+        margin-top: 3px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .phase-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 7px 10px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        white-space: nowrap;
+      }
+
+      .phase-live {
+        color: #166534;
+        background: #dcfce7;
+        border: 1px solid #86efac;
+      }
+
+      .phase-transition {
+        color: #92400e;
+        background: #fef3c7;
+        border: 1px solid #fcd34d;
+      }
+
+      .intersection-scene {
+        position: relative;
+        min-height: 260px;
+        border-radius: 18px;
+        overflow: hidden;
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        background:
+          linear-gradient(180deg, rgba(219, 234, 254, 0.75), rgba(248, 250, 252, 0.92)),
+          linear-gradient(90deg, rgba(226, 232, 240, 0.72), rgba(255, 255, 255, 0.72));
+      }
+
+      .road-vertical,
+      .road-horizontal {
+        position: absolute;
+        background: linear-gradient(180deg, #1f2937 0%, #334155 100%);
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+      }
+
+      .road-vertical {
+        top: -3%;
+        bottom: -3%;
+        left: 50%;
+        width: 84px;
+        transform: translateX(-50%);
+      }
+
+      .road-horizontal {
+        left: -3%;
+        right: -3%;
+        top: 50%;
+        height: 84px;
+        transform: translateY(-50%);
+      }
+
+      .lane-dashes-v,
+      .lane-dashes-h {
+        position: absolute;
+        opacity: 0.5;
+        pointer-events: none;
+      }
+
+      .lane-dashes-v {
+        top: 0;
+        bottom: 0;
+        left: calc(50% - 2px);
+        width: 4px;
+        background: repeating-linear-gradient(180deg, #f8fafc 0 12px, transparent 12px 24px);
+      }
+
+      .lane-dashes-h {
+        left: 0;
+        right: 0;
+        top: calc(50% - 2px);
+        height: 4px;
+        background: repeating-linear-gradient(90deg, #f8fafc 0 12px, transparent 12px 24px);
+      }
+
+      .center-island {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 86px;
+        height: 86px;
+        transform: translate(-50%, -50%);
+        border-radius: 26px;
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        background: linear-gradient(180deg, rgba(15, 23, 42, 0.92), rgba(30, 41, 59, 0.88));
+        color: #f8fafc;
+        box-shadow: 0 18px 28px rgba(15, 23, 42, 0.25);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+
+      .intersection-id {
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+      }
+
+      .traffic-stack {
+        display: flex;
+        gap: 6px;
+      }
+
+      .traffic-bulb {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        background: rgba(148, 163, 184, 0.35);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+      }
+
+      .traffic-bulb.active.green {
+        background: #22c55e;
+        box-shadow: 0 0 10px rgba(34, 197, 94, 0.75);
+      }
+
+      .traffic-bulb.active.amber {
+        background: #f59e0b;
+        box-shadow: 0 0 10px rgba(245, 158, 11, 0.7);
+      }
+
+      .movement-chip {
+        position: absolute;
+        width: 116px;
+        padding: 10px 10px 9px;
+        border-radius: 16px;
+        border: 1px solid rgba(148, 163, 184, 0.26);
+        background: rgba(15, 23, 42, 0.84);
+        color: #e2e8f0;
+        box-shadow: 0 12px 24px rgba(15, 23, 42, 0.18);
+      }
+
+      .movement-chip.active {
+        border-color: rgba(74, 222, 128, 0.75);
+        background: linear-gradient(180deg, rgba(3, 105, 58, 0.92), rgba(21, 128, 61, 0.88));
+        transform: translateZ(0) scale(1.02);
+      }
+
+      .movement-chip.emergency {
+        border-color: rgba(248, 113, 113, 0.72);
+        box-shadow: 0 12px 28px rgba(239, 68, 68, 0.18);
+      }
+
+      .pos-top {
+        top: 12px;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+
+      .pos-right {
+        top: 50%;
+        right: 12px;
+        transform: translateY(-50%);
+      }
+
+      .pos-bottom {
+        bottom: 12px;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+
+      .pos-left {
+        top: 50%;
+        left: 12px;
+        transform: translateY(-50%);
+      }
+
+      .lane-title-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      .lane-title {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+
+      .lane-flag {
+        color: #cbd5e1;
+        font-size: 11px;
+      }
+
+      .lane-metrics {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 6px;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .queue-bar {
+        height: 7px;
+        margin-top: 7px;
+        border-radius: 999px;
+        background: rgba(148, 163, 184, 0.2);
+        overflow: hidden;
+      }
+
+      .queue-fill {
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, #38bdf8, #0ea5e9);
+      }
+
+      .movement-chip.active .queue-fill {
+        background: linear-gradient(90deg, #86efac, #22c55e);
+      }
+
+      .movement-chip.emergency .queue-fill {
+        background: linear-gradient(90deg, #fb7185, #ef4444);
+      }
+
+      .car-strip {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        align-items: center;
+        min-height: 16px;
+        margin-top: 8px;
+      }
+
+      .car {
+        width: 12px;
+        height: 7px;
+        border-radius: 999px;
+        background: #7dd3fc;
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+      }
+
+      .movement-chip.active .car {
+        background: #bbf7d0;
+      }
+
+      .movement-chip.emergency .car {
+        background: #fecdd3;
+      }
+
+      .more-count {
+        color: #cbd5e1;
+        font-size: 11px;
+        font-weight: 600;
+      }
+
+      @media (max-width: 900px) {
+        .viz-corridor.multi::before {
+          display: none;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .viz-stage {
+          padding: 12px;
+        }
+
+        .intersection-scene {
+          min-height: 244px;
+        }
+
+        .movement-chip {
+          width: 104px;
+          padding: 9px 9px 8px;
+        }
+
+        .road-vertical {
+          width: 72px;
+        }
+
+        .road-horizontal {
+          height: 72px;
+        }
+
+        .center-island {
+          width: 78px;
+          height: 78px;
+        }
+      }
     </style>
   </head>
   <body>
@@ -302,6 +760,7 @@
                 hard_corridor_emergency
               </option>
             </select>
+            <input id="seedInput" type="text" placeholder="Optional seed" />
             <button onclick="resetTask()">POST /reset</button>
             <button onclick="getState()">GET /state</button>
             <button onclick="getHistory()">GET /history</button>
@@ -309,7 +768,9 @@
               Run inference.py
             </button>
           </div>
-          <p class="muted">Use reset first, then step repeatedly.</p>
+          <p id="sessionInfo" class="muted">
+            Use reset first, then step repeatedly. Current session: default.
+          </p>
         </section>
 
         <section class="card">
@@ -336,6 +797,7 @@
           <thead>
             <tr>
               <th>Task</th>
+              <th>Seed</th>
               <th>Success</th>
               <th>Steps</th>
               <th>Score</th>
@@ -343,12 +805,54 @@
           </thead>
           <tbody>
             <tr>
-              <td colspan="4" class="muted">
+              <td colspan="5" class="muted">
                 Run inference.py to populate scores.
               </td>
             </tr>
           </tbody>
         </table>
+      </section>
+
+      <section class="card viz-panel" style="margin-top: 12px">
+        <div class="viz-header">
+          <div>
+            <h2>2D Visualization</h2>
+            <p class="muted">
+              Live top-down view of queues, active movement, wait pressure, and emergency priority.
+            </p>
+          </div>
+          <div id="vizRewardBadge" class="status">No observation</div>
+        </div>
+        <div id="vizSummary" class="viz-summary">
+          <div class="viz-stat">
+            <span class="viz-stat-label">Task</span>
+            <span class="viz-stat-value">-</span>
+            <span class="viz-stat-note">Reset to begin</span>
+          </div>
+          <div class="viz-stat">
+            <span class="viz-stat-label">Step</span>
+            <span class="viz-stat-value">0</span>
+            <span class="viz-stat-note">No trajectory loaded</span>
+          </div>
+          <div class="viz-stat">
+            <span class="viz-stat-label">Queue</span>
+            <span class="viz-stat-value">0</span>
+            <span class="viz-stat-note">Total vehicles waiting</span>
+          </div>
+          <div class="viz-stat">
+            <span class="viz-stat-label">Emergency</span>
+            <span class="viz-stat-value">0</span>
+            <span class="viz-stat-note">Active priority lanes</span>
+          </div>
+        </div>
+        <div class="viz-legend">
+          <span class="viz-chip"><span class="viz-chip-dot live"></span>Active movement</span>
+          <span class="viz-chip"><span class="viz-chip-dot transition"></span>Switch cooldown</span>
+          <span class="viz-chip"><span class="viz-chip-dot emergency"></span>Emergency vehicle in queue</span>
+        </div>
+        <div id="vizContainer" class="viz-stage empty">
+          <div class="viz-empty">Run GET /state or POST /step to visualize intersections here.</div>
+        </div>
       </section>
 
       <section class="card" style="margin-top: 12px">
@@ -365,10 +869,39 @@
 
     <script>
       const defaultSpaceUrl = __DEFAULT_SPACE_URL__;
+      let currentSessionId = "";
 
       function getBaseUrl() {
         const value = document.getElementById("baseUrl").value.trim();
         return value || window.location.origin;
+      }
+
+      function updateSessionInfo() {
+        document.getElementById("sessionInfo").textContent =
+          `Use reset first, then step repeatedly. Current session: ${currentSessionId || "none"}.`;
+      }
+
+      function withSessionPath(path) {
+        if (!currentSessionId) {
+          return path;
+        }
+        const separator = path.includes("?") ? "&" : "?";
+        return `${path}${separator}session_id=${encodeURIComponent(currentSessionId)}`;
+      }
+
+      function rememberSession(payload) {
+        if (!payload || typeof payload !== "object") {
+          return;
+        }
+        const nextSessionId =
+          payload.session_id ||
+          payload.state?.session_id ||
+          payload.observation?.session_id;
+        if (nextSessionId) {
+          currentSessionId = nextSessionId;
+          updateSessionInfo();
+          applyBaseUrl();
+        }
       }
 
       function setAppStatus(text, kind) {
@@ -384,7 +917,13 @@
 
       function applyBaseUrl() {
         const base = getBaseUrl();
-        const links = ["/", "/state", "/history", "/reset", "/step"];
+        const links = [
+          "/",
+          withSessionPath("/state"),
+          withSessionPath("/history"),
+          "/reset",
+          withSessionPath("/step"),
+        ];
         const html = links
           .map(
             (path) =>
@@ -399,7 +938,236 @@
         applyBaseUrl();
       }
 
+      const phaseLabels = [
+        "N-S Straight",
+        "N-S Left",
+        "E-W Straight",
+        "E-W Left",
+      ];
+
+      const phaseKeys = [
+        "N_S_Straight",
+        "N_S_Left",
+        "E_W_Straight",
+        "E_W_Left",
+      ];
+
+      const laneConfig = {
+        N_S_Straight: { label: "N-S Straight", position: "top" },
+        N_S_Left: { label: "N-S Left", position: "left" },
+        E_W_Straight: { label: "E-W Straight", position: "right" },
+        E_W_Left: { label: "E-W Left", position: "bottom" },
+      };
+
+      function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+      }
+
+      function formatMetric(value, digits = 1) {
+        const numeric = Number(value);
+        return Number.isFinite(numeric) ? numeric.toFixed(digits) : "-";
+      }
+
+      function getObservationPayload(payload) {
+        if (payload && payload.observation && Array.isArray(payload.observation.intersections)) {
+          return payload.observation;
+        }
+        if (payload && payload.state && Array.isArray(payload.state.intersections)) {
+          return payload.state;
+        }
+        if (payload && Array.isArray(payload.intersections)) {
+          return payload;
+        }
+        return null;
+      }
+
+      function getRewardPayload(payload, observation) {
+        return (
+          observation?.reward_breakdown ||
+          payload?.reward_breakdown ||
+          payload?.info?.reward_breakdown ||
+          null
+        );
+      }
+
+      function buildCarsMarkup(queue, emergency) {
+        const count = clamp(Math.round(Number(queue) || 0), 0, 8);
+        const cars = Array.from({ length: count }, () => '<span class="car"></span>').join("");
+        const more = queue > 8 ? `<span class="more-count">+${queue - 8}</span>` : "";
+        return `<div class="car-strip">${cars || '<span class="more-count">clear</span>'}${more}</div>`;
+      }
+
+      function buildLaneChip(laneKey, laneState, currentPhase, inTransition) {
+        const config = laneConfig[laneKey];
+        const queue = Number(laneState?.queue || 0);
+        const waitTime = Number(laneState?.wait_time || 0);
+        const emergency = Boolean(laneState?.emergency);
+        const active = phaseKeys[currentPhase] === laneKey && !inTransition;
+        const onHold = phaseKeys[currentPhase] === laneKey && inTransition;
+        const fillPercent = clamp((queue / 14) * 100, 0, 100);
+        const classes = [`movement-chip`, `pos-${config.position}`];
+        if (active) {
+          classes.push("active");
+        }
+        if (emergency) {
+          classes.push("emergency");
+        }
+        const flagLabel = onHold ? "Hold" : active ? "Green" : emergency ? "Priority" : "Queued";
+
+        return `
+          <div class="${classes.join(" ")}">
+            <div class="lane-title-row">
+              <span class="lane-title">${config.label}</span>
+              <span class="lane-flag">${flagLabel}</span>
+            </div>
+            <div class="lane-metrics">
+              <span>Q ${queue}</span>
+              <span>W ${formatMetric(waitTime, 1)}</span>
+            </div>
+            <div class="queue-bar">
+              <div class="queue-fill" style="width: ${fillPercent}%"></div>
+            </div>
+            ${buildCarsMarkup(queue, emergency)}
+          </div>
+        `;
+      }
+
+      function renderVizSummary(observation, rewardBreakdown) {
+        const intersections = Array.isArray(observation?.intersections)
+          ? observation.intersections
+          : [];
+        const totalQueue = intersections.reduce((sum, inter) => {
+          return (
+            sum +
+            Object.values(inter.lanes || {}).reduce((laneSum, lane) => laneSum + Number(lane.queue || 0), 0)
+          );
+        }, 0);
+        const maxWait = intersections.reduce((peak, inter) => {
+          return Math.max(
+            peak,
+            ...Object.values(inter.lanes || {}).map((lane) => Number(lane.wait_time || 0)),
+          );
+        }, 0);
+        const emergencyCount = intersections.reduce((sum, inter) => {
+          return (
+            sum +
+            Object.values(inter.lanes || {}).filter((lane) => Boolean(lane.emergency)).length
+          );
+        }, 0);
+
+        document.getElementById("vizSummary").innerHTML = `
+          <div class="viz-stat">
+            <span class="viz-stat-label">Task</span>
+            <span class="viz-stat-value">${observation?.task_id || "-"}</span>
+            <span class="viz-stat-note">Seed ${observation?.seed ?? "-"}</span>
+          </div>
+          <div class="viz-stat">
+            <span class="viz-stat-label">Step</span>
+            <span class="viz-stat-value">${observation?.step ?? 0}</span>
+            <span class="viz-stat-note">of ${observation?.max_steps ?? 0}</span>
+          </div>
+          <div class="viz-stat">
+            <span class="viz-stat-label">Queued Vehicles</span>
+            <span class="viz-stat-value">${totalQueue}</span>
+            <span class="viz-stat-note">Peak wait ${formatMetric(maxWait, 1)}</span>
+          </div>
+          <div class="viz-stat">
+            <span class="viz-stat-label">Emergency Lanes</span>
+            <span class="viz-stat-value">${emergencyCount}</span>
+            <span class="viz-stat-note">Session ${observation?.session_id || "none"}</span>
+          </div>
+        `;
+
+        const rewardBadge = document.getElementById("vizRewardBadge");
+        const totalReward = Number(rewardBreakdown?.total);
+        if (Number.isFinite(totalReward)) {
+          rewardBadge.textContent = `Reward ${totalReward.toFixed(3)}`;
+          rewardBadge.style.borderColor = totalReward >= 0.75 ? "#86efac" : totalReward >= 0.45 ? "#fcd34d" : "#fca5a5";
+          rewardBadge.style.background = totalReward >= 0.75 ? "#f0fdf4" : totalReward >= 0.45 ? "#fffbeb" : "#fef2f2";
+          rewardBadge.style.color = totalReward >= 0.75 ? "#166534" : totalReward >= 0.45 ? "#92400e" : "#991b1b";
+        } else {
+          rewardBadge.textContent = "State snapshot";
+          rewardBadge.style.borderColor = "#dbe3ee";
+          rewardBadge.style.background = "#f8fafc";
+          rewardBadge.style.color = "#475569";
+        }
+      }
+
+      function renderIntersectionCard(intersection, taskId) {
+        const phaseLabel = phaseLabels[intersection.current_phase] || "Unknown";
+        const statusCopy = intersection.in_transition
+          ? `switch cooldown ${intersection.switch_cooldown_remaining}`
+          : "phase stable";
+        const bulbs = phaseKeys
+          .map((laneKey, index) => {
+            const active = intersection.current_phase === index;
+            const bulbClass = active
+              ? intersection.in_transition
+                ? "traffic-bulb active amber"
+                : "traffic-bulb active green"
+              : "traffic-bulb";
+            return `<span class="${bulbClass}" title="${laneKey}"></span>`;
+          })
+          .join("");
+        const laneMarkup = phaseKeys
+          .map((laneKey) =>
+            buildLaneChip(
+              laneKey,
+              intersection.lanes?.[laneKey] || {},
+              intersection.current_phase,
+              intersection.in_transition,
+            ),
+          )
+          .join("");
+
+        return `
+          <article class="intersection-card">
+            <div class="intersection-head">
+              <div>
+                <div class="intersection-title">Intersection ${intersection.id}</div>
+                <div class="intersection-sub">${taskId} · ${statusCopy}</div>
+              </div>
+              <span class="phase-pill ${intersection.in_transition ? "phase-transition" : "phase-live"}">${phaseLabel}</span>
+            </div>
+            <div class="intersection-scene">
+              <div class="road-vertical"></div>
+              <div class="road-horizontal"></div>
+              <div class="lane-dashes-v"></div>
+              <div class="lane-dashes-h"></div>
+              <div class="center-island">
+                <div class="intersection-id">I-${intersection.id}</div>
+                <div class="traffic-stack">${bulbs}</div>
+              </div>
+              ${laneMarkup}
+            </div>
+          </article>
+        `;
+      }
+
+      function renderViz(payload) {
+        const observation = getObservationPayload(payload);
+        if (!observation || !Array.isArray(observation.intersections)) {
+          return;
+        }
+
+        const intersections = observation.intersections;
+        const container = document.getElementById("vizContainer");
+        const rewardBreakdown = getRewardPayload(payload, observation);
+        renderVizSummary(observation, rewardBreakdown);
+
+        container.className = "viz-stage";
+        const corridorClass = intersections.length > 1 ? "viz-corridor multi" : "viz-corridor";
+        container.innerHTML = `
+          <div class="${corridorClass}">
+            ${intersections
+              .map((intersection) => renderIntersectionCard(intersection, observation.task_id || "task"))
+              .join("")}
+          </div>
+        `;
+      }
+
       function printOutput(payload) {
+        renderViz(payload);
         if (typeof payload === "string") {
           document.getElementById("output").textContent = payload;
         } else {
@@ -457,6 +1225,7 @@
 
             runs.push({
               task_id: currentTask,
+              seed: Number(payload.seed || 0),
               success:
                 String(payload.success || "false").toLowerCase() === "true",
               steps: Number(payload.steps || 0),
@@ -488,6 +1257,7 @@
           success: Boolean(payload?.success),
           summary: {
             task_count: summary.task_count ?? parsedRuns.length,
+            run_count: summary.run_count ?? parsedRuns.length,
             average_score:
               summary.average_score ??
               (scores.length
@@ -511,7 +1281,7 @@
         document.getElementById("inferenceSummary").textContent =
           runs.length === 0
             ? "Inference completed, but no per-task scores were parsed."
-            : `Tasks: ${summary.task_count ?? runs.length}, average score ${formatScore(
+            : `Tasks: ${summary.task_count ?? runs.length}, runs: ${summary.run_count ?? runs.length}, average score ${formatScore(
                 summary.average_score ?? 0,
               )}, best ${formatScore(summary.best_score ?? 0)}, worst ${formatScore(
                 summary.worst_score ?? 0,
@@ -523,13 +1293,14 @@
                 (run) => `
                   <tr>
                     <td>${run.task_id}</td>
+                    <td>${run.seed ?? "-"}</td>
                     <td><span class="badge ${run.success ? "ok" : "fail"}">${run.success ? "true" : "false"}</span></td>
                     <td>${run.steps}</td>
                     <td>${formatScore(run.score)}</td>
                   </tr>`,
               )
               .join("")
-          : '<tr><td colspan="4" class="muted">No scores parsed from output.</td></tr>';
+          : '<tr><td colspan="5" class="muted">No scores parsed from output.</td></tr>';
 
         document
           .getElementById("inferenceTable")
@@ -549,6 +1320,7 @@
         try {
           payload = JSON.parse(result.text);
         } catch (_) {}
+        rememberSession(payload);
         printOutput(payload);
         return result;
       }
@@ -608,19 +1380,27 @@
 
       async function resetTask() {
         const task = document.getElementById("taskId").value;
+        const seedRaw = document.getElementById("seedInput").value.trim();
+        const body = { task_id: task };
+        if (seedRaw) {
+          body.seed = Number(seedRaw);
+        }
+        if (currentSessionId) {
+          body.session_id = currentSessionId;
+        }
         await requestJson("/reset", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ task_id: task }),
+          body: JSON.stringify(body),
         });
       }
 
       async function getState() {
-        await requestJson("/state");
+        await requestJson(withSessionPath("/state"));
       }
 
       async function getHistory() {
-        await requestJson("/history");
+        await requestJson(withSessionPath("/history"));
       }
 
       async function runInference() {
@@ -630,7 +1410,7 @@
         document
           .getElementById("inferenceTable")
           .querySelector("tbody").innerHTML =
-          '<tr><td colspan="4" class="muted">Running inference.py...</td></tr>';
+          '<tr><td colspan="5" class="muted">Running inference.py...</td></tr>';
         clearOutput();
         try {
           const result = await fetchText("/run-inference", {
@@ -670,16 +1450,25 @@
           printOutput(`Invalid JSON payload: ${e.message}`);
           return;
         }
-        await requestJson("/step", {
+        await requestJson(withSessionPath("/step"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
+        
+        // Fetch state to update the visualization
+        try {
+          const res = await fetchText(withSessionPath("/state"));
+          if (res.ok) {
+            renderViz(JSON.parse(res.text));
+          }
+        } catch (e) {}
       }
 
       (function init() {
         document.getElementById("baseUrl").value =
           defaultSpaceUrl || window.location.origin;
+        updateSessionInfo();
         applyBaseUrl();
         pingRoot();
       })();

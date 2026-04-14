@@ -6,14 +6,17 @@ Mandatory environment variables:
 """
 
 import json
-import math
 import os
 from typing import Any, Dict, List, Optional
 
 import requests
-from openai import OpenAI
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+
+try:
+    from openai import OpenAI
+except ImportError:  # pragma: no cover - dependency is optional for local heuristic runs.
+    OpenAI = None
 
 from graders import grade_task
 
@@ -43,6 +46,12 @@ TASKS = [
 ]
 SUCCESS_SCORE_THRESHOLD = float(os.getenv("SUCCESS_SCORE_THRESHOLD", "0.65"))
 TIMEOUT_SECONDS = float(os.getenv("REQUEST_TIMEOUT_SECONDS", "40"))
+DEFAULT_EVAL_SEED_OFFSETS = [0, 101, 202]
+TASK_BASE_SEEDS = {
+    "easy_4_phase": 17,
+    "medium_asymmetric": 29,
+    "hard_corridor_emergency": 43,
+}
 
 LANE_PHASES = ["N_S_Straight", "N_S_Left", "E_W_Straight", "E_W_Left"]
 BACKPRESSURE_TRANSITION_PENALTY = _env_float(
@@ -60,33 +69,12 @@ HARD_STARVATION_BONUS = _env_float("HARD_STARVATION_BONUS", 5.50)
 HARD_NS_EMERGENCY_PHASE_BONUS = _env_float(
     "HARD_NS_EMERGENCY_PHASE_BONUS", 8.0)
 POLICY_HINT_ALPHA = _env_float("POLICY_HINT_ALPHA", 0.00)
-QUEUE_SQRT_WEIGHT = _env_float("QUEUE_SQRT_WEIGHT", 0.55)
-QUEUE_LINEAR_WEIGHT = _env_float("QUEUE_LINEAR_WEIGHT", 0.10)
-STARVATION_LINEAR_RATE = _env_float("STARVATION_LINEAR_RATE", 0.12)
-STARVATION_EXP_RAMP = _env_float("STARVATION_EXP_RAMP", 0.015)
-STARVATION_EXP_THRESHOLD = _env_float("STARVATION_EXP_THRESHOLD", 30.0)
-STARVATION_EXP_SCALE = _env_float("STARVATION_EXP_SCALE", 2.5)
-STICKINESS_DECAY = _env_float("STICKINESS_DECAY", 0.88)
-STICKINESS_BASE = _env_float("STICKINESS_BASE", 0.45)
-QUEUE_GROWTH_WEIGHT = _env_float("QUEUE_GROWTH_WEIGHT", 0.30)
-CORRIDOR_LOOKAHEAD = int(os.getenv("CORRIDOR_LOOKAHEAD", "2"))
 USE_POLICY_HINT_FOR_HARD = os.getenv("USE_POLICY_HINT_FOR_HARD", "0").strip().lower() in {
     "1",
     "true",
     "yes",
     "on",
 }
-
-SYSTEM_PROMPT = """You are a traffic signal timing engineer tuning heuristic parameters for multi-intersection signal control.
-
-PARAMETER GUIDE:
-queue_weight (0.5-2.0): queue-length urgency.
-wait_weight (0.01-0.10): fairness for long waits.
-switch_margin (0.3-1.6): score gap required to switch phase.
-ns_bias (0.0-1.0): N-S straight directional preference.
-
-Return ONLY a JSON object with these keys: queue_weight, wait_weight, switch_margin, ns_bias.
-"""
 
 TASK_DESCRIPTIONS = {
     "easy_4_phase": "Single isolated 4-way intersection with roughly balanced demand.",
@@ -109,12 +97,12 @@ def _build_session() -> requests.Session:
     return s
 
 
-client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN or "missing-hf-token")
+client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN or "missing-hf-token") if OpenAI else None
 session = _build_session()
 
 
-def log_start(task: str, env: str, model: str) -> None:
-    print(f"[START] task={task} env={env} model={model}", flush=True)
+def log_start(task: str, env: str, model: str, seed: int) -> None:
+    print(f"[START] task={task} seed={seed} env={env} model={model}", flush=True)
 
 
 def log_step(step: int, action: str, reward: float, done: bool, error: Optional[str]) -> None:
@@ -126,33 +114,58 @@ def log_step(step: int, action: str, reward: float, done: bool, error: Optional[
     )
 
 
-def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> None:
+def log_end(success: bool, steps: int, score: float, rewards: List[float], seed: int) -> None:
     rewards_str = ",".join(f"{item:.2f}" for item in rewards)
     success_str = str(success).lower()
     print(
-        f"[END] success={success_str} steps={steps} score={score:.3f} rewards={rewards_str}",
+        f"[END] seed={seed} success={success_str} steps={steps} score={score:.3f} rewards={rewards_str}",
         flush=True,
     )
 
 
-def reset_task(task_id: str) -> None:
+def build_eval_seeds(task_id: str) -> List[int]:
+    raw = os.getenv("TRAFFIC_CORRIDOR_EVAL_SEEDS", "").strip()
+    if raw:
+        parsed = []
+        for item in raw.split(","):
+            item = item.strip()
+            if not item:
+                continue
+            try:
+                parsed.append(int(item))
+            except ValueError:
+                continue
+        if parsed:
+            return parsed
+
+    base_seed = TASK_BASE_SEEDS.get(task_id, 0)
+    return [base_seed + offset for offset in DEFAULT_EVAL_SEED_OFFSETS]
+
+
+def reset_task(task_id: str, seed: int) -> str:
     response = session.post(
         f"{ENV_BASE_URL}/reset",
-        json={"task_id": task_id},
+        json={"task_id": task_id, "seed": seed},
         timeout=TIMEOUT_SECONDS,
     )
     response.raise_for_status()
+    return response.json().get("session_id", "default")
 
 
-def get_state() -> Dict[str, Any]:
-    response = session.get(f"{ENV_BASE_URL}/state", timeout=TIMEOUT_SECONDS)
+def get_state(session_id: str) -> Dict[str, Any]:
+    response = session.get(
+        f"{ENV_BASE_URL}/state",
+        params={"session_id": session_id},
+        timeout=TIMEOUT_SECONDS,
+    )
     response.raise_for_status()
     return response.json()
 
 
-def step_env(actions: List[Dict[str, int]]) -> Dict[str, Any]:
+def step_env(session_id: str, actions: List[Dict[str, int]]) -> Dict[str, Any]:
     response = session.post(
         f"{ENV_BASE_URL}/step",
+        params={"session_id": session_id},
         json={"actions": actions},
         timeout=TIMEOUT_SECONDS,
     )
@@ -160,8 +173,12 @@ def step_env(actions: List[Dict[str, int]]) -> Dict[str, Any]:
     return response.json()
 
 
-def get_history() -> List[Dict[str, Any]]:
-    response = session.get(f"{ENV_BASE_URL}/history", timeout=TIMEOUT_SECONDS)
+def get_history(session_id: str) -> List[Dict[str, Any]]:
+    response = session.get(
+        f"{ENV_BASE_URL}/history",
+        params={"session_id": session_id},
+        timeout=TIMEOUT_SECONDS,
+    )
     response.raise_for_status()
     return response.json().get("history", [])
 
@@ -199,7 +216,7 @@ def _extract_json_object(text: str) -> Dict[str, Any]:
 
 
 def get_policy_hint(task_id: str) -> Dict[str, float]:
-    if not HF_TOKEN:
+    if not HF_TOKEN or client is None:
         return {}
     if task_id == "hard_corridor_emergency" and not USE_POLICY_HINT_FOR_HARD:
         return {}
@@ -285,66 +302,6 @@ def _corridor_downstream_pressure(task_id: str, intersections: List[Dict[str, An
     return pressure
 
 
-def _queue_urgency(queue: float, queue_weight: float) -> float:
-    if queue <= 0:
-        return 0.0
-    return queue_weight * QUEUE_SQRT_WEIGHT * math.sqrt(queue)
-
-
-def _starvation_bonus(wait_time: float, hard: bool) -> float:
-    base = STARVATION_LINEAR_RATE * wait_time
-    threshold = STARVATION_EXP_THRESHOLD * (1.1 if hard else 1.0)
-    if wait_time > threshold:
-        overshoot = wait_time - threshold
-        base += STARVATION_EXP_SCALE * \
-            (math.exp(STARVATION_EXP_RAMP * overshoot) - 1.0)
-    if hard:
-        base += 0.25 * HARD_STARVATION_BONUS
-    return base
-
-
-def _estimate_phase_duration(history: List[Dict[str, Any]], intersection_id: int, current_phase: int) -> int:
-    duration = 0
-    for snapshot in reversed(history):
-        state = snapshot.get("state", [])
-        if not isinstance(state, list):
-            break
-        match = _find_intersection(state, intersection_id)
-        if match is None:
-            break
-        if int(match.get("current_phase", -1)) != current_phase:
-            break
-        duration += 1
-    return duration
-
-
-def _queue_growth_rate(
-    intersection_id: int,
-    lane: str,
-    current_queue: float,
-    history: List[Dict[str, Any]],
-) -> float:
-    if not history:
-        return 0.0
-    prev_state = history[-1].get("state", [])
-    if not isinstance(prev_state, list):
-        return 0.0
-    prev_inter = _find_intersection(prev_state, intersection_id)
-    if prev_inter is None:
-        return 0.0
-    prev_queue = float(prev_inter.get(
-        "lanes", {}).get(lane, {}).get("queue", 0))
-    return current_queue - prev_queue
-
-
-def _decaying_stickiness(current_phase: int, phase: int, hard: bool, phase_duration: int) -> float:
-    if phase != current_phase:
-        return 0.0
-    base = HARD_STICKINESS_BONUS if hard else STICKINESS_BASE
-    decay = 0.85 if hard else STICKINESS_DECAY
-    return base * (decay ** phase_duration)
-
-
 def choose_phase(
     task_id: str,
     inter: Dict[str, Any],
@@ -415,30 +372,29 @@ def choose_phase(
     return best_phase
 
 
-def run_task(task_id: str) -> float:
-    reset_task(task_id)
+def run_task(task_id: str, seed: int) -> float:
+    session_id = reset_task(task_id, seed)
     policy = get_policy_hint(task_id)
 
-    log_start(task=task_id, env=BENCHMARK, model=MODEL_NAME)
+    log_start(task=task_id, env=BENCHMARK, model=MODEL_NAME, seed=seed)
 
     rewards: List[float] = []
     steps_taken = 0
     success = False
     score = 0.0
     try:
-        state = get_state()
+        state = get_state(session_id)
         max_steps = int(state.get("max_steps", 100))
         for step in range(1, max_steps + 1):
             intersections = state.get("intersections", [])
             actions: List[Dict[str, int]] = []
             for inter in intersections:
-                iid = int(inter["id"])
                 phase = choose_phase(task_id, inter, policy, intersections)
-                actions.append({"intersection_id": iid, "phase": phase})
+                actions.append({"intersection_id": int(inter["id"]), "phase": phase})
 
             action_str = json.dumps(
                 actions, separators=(",", ":"), sort_keys=True)
-            result = step_env(actions)
+            result = step_env(session_id, actions)
             reward = float(result.get("reward", 0.0))
             done = bool(result.get("done", False))
             info = result.get("info", {})
@@ -451,33 +407,37 @@ def run_task(task_id: str) -> float:
             log_step(step=step, action=action_str,
                      reward=reward, done=done, error=error)
 
-            state = get_state()
+            state = get_state(session_id)
 
             if done:
                 break
 
-        history = get_history()
+        history = get_history(session_id)
         score = grade_task(task_id, history)
         score = max(0.0, min(1.0, score))
         success = score >= SUCCESS_SCORE_THRESHOLD
 
     finally:
         log_end(success=success, steps=steps_taken,
-                score=score, rewards=rewards)
+                score=score, rewards=rewards, seed=seed)
 
     return score
 
 
 def main() -> int:
+    import traceback
     overall_scores = []
     for task_id in TASKS:
-        try:
-            task_score = run_task(task_id)
-        except Exception:
-            log_start(task=task_id, env=BENCHMARK, model=MODEL_NAME)
-            log_end(success=False, steps=0, score=0.0, rewards=[])
-            task_score = 0.0
-        overall_scores.append(task_score)
+        seeds = build_eval_seeds(task_id)
+        for seed in seeds:
+            try:
+                task_score = run_task(task_id, seed)
+            except Exception as e:
+                traceback.print_exc()
+                log_start(task=task_id, env=BENCHMARK, model=MODEL_NAME, seed=seed)
+                log_end(success=False, steps=0, score=0.0, rewards=[], seed=seed)
+                task_score = 0.0
+            overall_scores.append(task_score)
     return 0
 
 
